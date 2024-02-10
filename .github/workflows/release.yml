@@ -1,0 +1,70 @@
+name: Release Binary
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+
+      - name: Build for Linux
+        run: GOOS=linux GOARCH=amd64 go build -o discounter_linux_amd64
+
+      - name: Build for macOS
+        run: GOOS=darwin GOARCH=amd64 go build -o discounter_macos_amd64
+
+      - name: Build for Windows
+        run: GOOS=windows GOARCH=amd64 go build -o discounter_windows_x86_64.exe
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./discounter_linux_amd64
+          asset_name: discounter_linux_amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./discounter_macos_amd64
+          asset_name: discounter_macos_amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./discounter_windows_x86_64.exe
+          asset_name: discounter_windows_x86_64.exe
+          asset_content_type: application/octet-stream
